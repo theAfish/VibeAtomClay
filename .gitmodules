@@ -1,0 +1,7 @@
+[submodule "packages/frontend"]
+	path = packages/frontend
+	url = https://github.com/theAfish/AtomClay.git
+[submodule "packages/agent-server"]
+	path = packages/agent-server
+	url = https://github.com/theAfish/agentom.git
+	branch = atomclay_agent
