@@ -11,3 +11,8 @@ __pycache__/
 # IDE
 .vscode/
 .idea/
+
+workspace/
+outputs_archive/
+
+.env

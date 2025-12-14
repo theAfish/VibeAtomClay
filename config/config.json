@@ -1,0 +1,11 @@
+{
+  "OUTPUT_ARCHIVE_DIR": "./outputs_archive",
+  "WORKSPACE_DIR": "./packages/agent-server/agentom/workspace",
+  "LOG_LEVEL": "INFO",
+  "LOG_TO_FILE": true,
+  "AGENTOM_MODEL": "openai/qwen3-max",
+  "VISION_MODEL": "openai/qwen3-omni-flash",
+  "WIKI_MODEL": "openai/qwen3-max",
+  "STRUCTURE_MODEL": "openai/qwen3-max",
+  "MP_MODEL": "openai/qwen-turbo"
+}
