@@ -16,8 +16,9 @@ def ensure_workspace_dirs():
     for dir_path in [INPUTS_DIR, LOGS_DIR, OUTPUTS_DIR]:
         dir_path.mkdir(parents=True, exist_ok=True)
 
-def cleanup_workspace():
-    logger.info("Cleaning up workspace for new session...")
+def archive_workspace():
+    """Archives outputs from the workspace to the archive directory."""
+    logger.info("Archiving workspace outputs...")
     
     # Determine archive directory
     archive_path = ROOT_DIR / "outputs_archive"
@@ -36,7 +37,7 @@ def cleanup_workspace():
             
     archive_path.mkdir(parents=True, exist_ok=True)
     
-    # 1. Transfer outputs to archive
+    # Transfer outputs to archive
     if OUTPUTS_DIR.exists():
         for item in OUTPUTS_DIR.iterdir():
             try:
@@ -48,8 +49,15 @@ def cleanup_workspace():
                     else:
                         dest.unlink()
                 shutil.move(str(item), str(dest))
+                logger.info(f"Archived {item.name}")
             except Exception as e:
                 logger.error(f"Failed to move {item} to archive: {e}")
+
+def cleanup_workspace():
+    logger.info("Cleaning up workspace for new session...")
+    
+    # 1. Archive existing outputs
+    archive_workspace()
                 
     # 2. Clear Inputs, Outputs, Tmp
     dirs_to_clear = [INPUTS_DIR, OUTPUTS_DIR, WORKSPACE_DIR / "tmp"]
