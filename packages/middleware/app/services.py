@@ -3,9 +3,10 @@ import logging
 import shutil
 import glob
 import os
+from datetime import datetime
 from pathlib import Path
 from fastapi import HTTPException
-from .config import CONFIG_FILE, WORKSPACE_DIR, INPUTS_DIR, LOGS_DIR, OUTPUTS_DIR, BASE_DIR, ROOT_DIR
+from .config import CONFIG_FILE, WORKSPACE_DIR, INPUTS_DIR, LOGS_DIR, OUTPUTS_DIR, TEMP_DIR, BASE_DIR, ROOT_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ def archive_workspace():
     logger.info("Archiving workspace outputs...")
     
     # Determine archive directory
-    archive_path = ROOT_DIR / "outputs_archive"
+    archive_root = ROOT_DIR / "outputs_archive"
     if CONFIG_FILE.exists():
         try:
             with open(CONFIG_FILE, 'r') as f:
@@ -29,12 +30,15 @@ def archive_workspace():
                 if "OUTPUT_ARCHIVE_DIR" in config:
                     p = Path(config["OUTPUT_ARCHIVE_DIR"])
                     if p.is_absolute():
-                        archive_path = p
+                        archive_root = p
                     else:
-                        archive_path = ROOT_DIR / p
+                        archive_root = ROOT_DIR / p
         except Exception:
             pass
             
+    # Create timestamped folder
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    archive_path = archive_root / timestamp
     archive_path.mkdir(parents=True, exist_ok=True)
     
     # Transfer outputs to archive
@@ -42,25 +46,23 @@ def archive_workspace():
         for item in OUTPUTS_DIR.iterdir():
             try:
                 dest = archive_path / item.name
-                # Handle overwrite if needed, or just move
-                if dest.exists():
-                    if dest.is_dir():
-                        shutil.rmtree(dest)
-                    else:
-                        dest.unlink()
-                shutil.move(str(item), str(dest))
-                logger.info(f"Archived {item.name}")
+                if item.is_file():
+                    shutil.move(str(item), str(dest))
+                elif item.is_dir():
+                    shutil.move(str(item), str(dest))
+                logger.info(f"Archived {item.name} to {dest}")
             except Exception as e:
                 logger.error(f"Failed to move {item} to archive: {e}")
+    logger.info(f"Transferred outputs to target directory: {archive_path}")
 
 def cleanup_workspace():
-    logger.info("Cleaning up workspace for new session...")
+    logger.info("Cleaning up workspace...")
     
     # 1. Archive existing outputs
     archive_workspace()
                 
-    # 2. Clear Inputs, Outputs, Tmp
-    dirs_to_clear = [INPUTS_DIR, OUTPUTS_DIR, WORKSPACE_DIR / "tmp"]
+    # 2. Clear Inputs, Outputs, Temp
+    dirs_to_clear = [INPUTS_DIR, OUTPUTS_DIR, TEMP_DIR]
     for d in dirs_to_clear:
         if d.exists():
             for item in d.iterdir():
@@ -71,6 +73,7 @@ def cleanup_workspace():
                         shutil.rmtree(item)
                 except Exception as e:
                     logger.error(f"Failed to delete {item} in {d}: {e}")
+            logger.info(f"Cleared directory: {d}")
                     
     # 3. Clear Workspace Root Files (excluding dirs)
     if WORKSPACE_DIR.exists():
@@ -80,6 +83,7 @@ def cleanup_workspace():
                     item.unlink()
                  except Exception as e:
                     logger.error(f"Failed to delete {item} in workspace root: {e}")
+        logger.info(f"Cleared workspace directory: {WORKSPACE_DIR}")
     
     logger.info("Workspace cleanup complete.")
 

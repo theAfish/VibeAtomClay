@@ -14,6 +14,7 @@ WORKSPACE_DIR = BASE_DIR / "agent-server" / "agentom" / "workspace"
 INPUTS_DIR = WORKSPACE_DIR / "inputs"
 LOGS_DIR = WORKSPACE_DIR / "logs"
 OUTPUTS_DIR = WORKSPACE_DIR / "outputs"
+TEMP_DIR = WORKSPACE_DIR / "temp"
 
 AGENTOM_BASE_URL = os.getenv("AGENTOM_BASE_URL", "http://localhost:8000")
 APP_NAME = "agentom"

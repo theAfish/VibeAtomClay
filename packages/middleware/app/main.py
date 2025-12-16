@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
 from .routers import agent, files, logs, config
-from .services import archive_workspace
+from .services import archive_workspace, cleanup_workspace
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -15,9 +15,7 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown logic
     logger.info("Shutting down middleware...")
-    archive_workspace()
-    logger.info("Middleware shutdown complete.")
-
+    cleanup_workspace()
 app = FastAPI(
     title="AtomClay Backend", 
     description="Middle-layer API for connecting AtomClay frontend to Agentom server",

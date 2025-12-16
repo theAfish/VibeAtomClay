@@ -92,7 +92,7 @@ def main():
         # We wait for them to exit gracefully.
         print("Waiting for services to shut down gracefully...")
         start_wait = time.time()
-        grace_period = 5  # seconds
+        grace_period = 10  # seconds
         
         while time.time() - start_wait < grace_period:
             if all(p.poll() is not None for _, p in processes):
