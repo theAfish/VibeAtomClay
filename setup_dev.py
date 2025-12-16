@@ -79,9 +79,10 @@ def setup_python_env(env_name, requirements_path, root_dir):
     create_venv(venv_path)
     
     pip_exe = get_venv_pip(venv_path)
+    python_exe = get_venv_python(venv_path)
     
     # Upgrade pip
-    run_command([pip_exe, "install", "--upgrade", "pip"])
+    run_command([python_exe, "-m", "pip", "install", "--upgrade", "pip"])
     
     if os.path.exists(requirements_path):
         print(f"Installing requirements from {requirements_path}...")
