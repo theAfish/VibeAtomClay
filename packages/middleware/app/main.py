@@ -16,6 +16,7 @@ async def lifespan(app: FastAPI):
     # Shutdown logic
     logger.info("Shutting down middleware...")
     cleanup_workspace()
+
 app = FastAPI(
     title="AtomClay Backend", 
     description="Middle-layer API for connecting AtomClay frontend to Agentom server",
