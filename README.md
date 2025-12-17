@@ -1,4 +1,6 @@
-# Installation guide:
+# Vibe Modelling with AtomClay
+
+## Installation guide:
 
 1. Setup the `config.json` in the `./config/` folder. You can leave it as default.
 2. Create a `.env` file in the `./config/` folder based on the `example.env` file.
