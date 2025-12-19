@@ -34,7 +34,8 @@ async def run_agent(request: dict):
     # First, create the session if not exists
     session_url = f"{AGENTOM_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions/{session_id}"
     try:
-        requests.post(session_url, json={}, headers={"Content-Type": "application/json"})
+        async with httpx.AsyncClient() as client:
+            await client.post(session_url, json={}, headers={"Content-Type": "application/json"})
         # Ignore if it already exists or fails, as long as we try
     except:
         pass  # Continue anyway
@@ -76,11 +77,12 @@ async def create_session(request: CreateSessionRequest):
     # Call agentom to create session
     url = f"{AGENTOM_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions/{session_id}"
     try:
-        response = requests.post(url, json={}, headers={"Content-Type": "application/json"})
-        response.raise_for_status()
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json={}, headers={"Content-Type": "application/json"})
+            response.raise_for_status()
         # Assuming success, return the ids
         return CreateSessionResponse(user_id=user_id, session_id=session_id)
-    except requests.RequestException as e:
+    except httpx.HTTPError as e:
         raise HTTPException(status_code=500, detail=f"Failed to create session: {str(e)}")
 
 @router.post("/send_message", response_model=SendMessageResponse)
@@ -89,10 +91,11 @@ async def send_message(request: SendMessageRequest):
     try:
         # Assuming sending message is POST to the same URL with message
         data = {"message": request.message}
-        response = requests.post(url, json=data, headers={"Content-Type": "application/json"})
-        response.raise_for_status()
-        # Assuming the response is JSON with the agent's response
-        result = response.json()
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=data, headers={"Content-Type": "application/json"})
+            response.raise_for_status()
+            # Assuming the response is JSON with the agent's response
+            result = response.json()
         return SendMessageResponse(response=result.get("response", str(result)))
-    except requests.RequestException as e:
+    except httpx.HTTPError as e:
         raise HTTPException(status_code=500, detail=f"Failed to send message: {str(e)}")
