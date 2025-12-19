@@ -5,6 +5,7 @@
 
 ## Installation guide:
 
+0. Clone the repository into your local machine.
 1. Setup the `config.json` in the `./config/` folder. You can leave it as default.
 2. Create a `.env` file in the `./config/` folder based on the `example.env` file.
 3. Run the `setup.bat` (Windows) or `setup.sh` (Linux/macOS) script to install dependencies for all the packages.
