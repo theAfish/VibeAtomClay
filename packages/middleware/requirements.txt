@@ -3,3 +3,6 @@ uvicorn[standard]
 requests
 pydantic
 httpx
+pymatgen
+ase
+numpy

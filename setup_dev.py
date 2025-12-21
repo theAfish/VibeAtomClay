@@ -4,14 +4,22 @@ import sys
 import platform
 import shutil
 
-def run_command(command, cwd=None, shell=False, env=None):
+def run_command(command, cwd=None, shell=False, env=None, timeout=None, exit_on_error=True):
     """Runs a command and prints output."""
     print(f"Running: {' '.join(command) if isinstance(command, list) else command}")
     try:
-        subprocess.check_call(command, cwd=cwd, shell=shell, env=env)
+        subprocess.run(command, cwd=cwd, shell=shell, env=env, check=True, timeout=timeout)
+        return True
     except subprocess.CalledProcessError as e:
         print(f"Error running command: {e}")
-        sys.exit(1)
+        if exit_on_error:
+            sys.exit(1)
+        return False
+    except subprocess.TimeoutExpired as e:
+        print(f"Error: Command timed out after {timeout} seconds.")
+        if exit_on_error:
+            sys.exit(1)
+        return False
 
 def get_venv_python(venv_path):
     """Returns the path to the python executable in the venv."""
@@ -39,7 +47,29 @@ def setup_submodules(root_dir):
     """Initializes and updates git submodules."""
     print("\n--- Setting up Git Submodules ---")
     if os.path.exists(os.path.join(root_dir, ".git")):
-        run_command(["git", "submodule", "update", "--init", "--recursive"], cwd=root_dir)
+        # Timeout set to 600 seconds (10 minutes) to prevent indefinite hanging
+        # Removed --depth 1 as it can cause 'not our ref' errors if the commit isn't the tip
+        cmd = ["git", "submodule", "update", "--init", "--recursive", "--jobs", "4"]
+        
+        def cleanup_submodules():
+            print("Cleaning up broken submodules...")
+            run_command(["git", "submodule", "deinit", "-f", "--all"], cwd=root_dir, exit_on_error=False)
+
+        # Try first attempt
+        if not run_command(cmd, cwd=root_dir, timeout=600, exit_on_error=False):
+            print("\n!!! Submodule update failed. Attempting to clean and retry... !!!")
+            
+            cleanup_submodules()
+            
+            # Retry update
+            print("Retrying submodule update with --remote (fetching latest)...")
+            retry_cmd = ["git", "submodule", "update", "--init", "--recursive", "--remote", "--jobs", "4"]
+            if not run_command(retry_cmd, cwd=root_dir, timeout=600, exit_on_error=False):
+                print("\n!!! Retry failed. Cleaning up to avoid 'staged changes' mess... !!!")
+                cleanup_submodules()
+                print("Setup failed due to network issues. Please check your connection and try again.")
+                sys.exit(1)
+            
     else:
         print("Not a git repository or .git missing. Skipping submodule setup.")
 

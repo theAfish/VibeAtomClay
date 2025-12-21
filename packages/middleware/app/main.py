@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
-from .routers import agent, files, logs, config
+from .routers import agent, files, logs, config, materials
 from .services import archive_workspace, cleanup_workspace
 
 # Configure logging
@@ -37,6 +37,7 @@ app.include_router(agent.router)
 app.include_router(files.router)
 app.include_router(logs.router)
 app.include_router(config.router)
+app.include_router(materials.router)
 
 @app.get("/")
 async def root():

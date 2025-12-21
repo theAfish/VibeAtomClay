@@ -54,14 +54,18 @@ def main():
 
         # 2. Server
         # Command: adk api_server agentom
-        print("[Server] Starting...")
-        adk_exe = get_executable(server_env, "adk")
-        server_process = subprocess.Popen(
-            [adk_exe, "api_server", "agentom"],
-            cwd=server_dir,
-            shell=False
-        )
-        processes.append(("Server", server_process))
+        # Check if server directory exists and has content (e.g. requirements.txt)
+        if os.path.exists(os.path.join(server_dir, "requirements.txt")):
+            print("[Server] Starting...")
+            adk_exe = get_executable(server_env, "adk")
+            server_process = subprocess.Popen(
+                [adk_exe, "api_server", "agentom"],
+                cwd=server_dir,
+                shell=False
+            )
+            processes.append(("Server", server_process))
+        else:
+            print("[Server] Skipping (not found or not initialized)...")
 
         # 3. Frontend
         # Command: npm run dev
