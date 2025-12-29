@@ -5,7 +5,7 @@ import httpx
 import uuid
 import logging
 from ..models import CreateSessionRequest, CreateSessionResponse, SendMessageRequest, SendMessageResponse
-from ..services import check_new_session, persist_structure_file, cleanup_workspace
+from ..services import persist_structure_file, set_last_session_id
 from ..config import AGENTOM_BASE_URL, APP_NAME
 
 router = APIRouter()
@@ -25,11 +25,10 @@ async def run_agent(request: dict):
     if not user_id or not session_id:
         raise HTTPException(status_code=400, detail="userId and sessionId are required")
 
-    # Detect new session and cleanup
-    check_new_session(session_id)
+    set_last_session_id(session_id)
 
     if structure_payload:
-        persist_structure_file(structure_payload)
+        persist_structure_file(structure_payload, session_id)
 
     # First, create the session if not exists
     session_url = f"{AGENTOM_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions/{session_id}"
@@ -68,7 +67,7 @@ async def run_agent(request: dict):
 @router.post("/create_session", response_model=CreateSessionResponse)
 async def create_session(request: CreateSessionRequest):
     # Cleanup workspace before starting new session
-    cleanup_workspace()
+    # cleanup_workspace()
 
     # Generate unique user_id and session_id
     user_id = f"u_{uuid.uuid4().hex[:6]}"

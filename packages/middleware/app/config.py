@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from datetime import datetime
 
 # In middleware/app/config.py
 # .parent -> app
@@ -11,10 +12,30 @@ ROOT_DIR = BASE_DIR.parent
 CONFIG_FILE = ROOT_DIR / "config" / "config.json"
 
 WORKSPACE_DIR = BASE_DIR / "agent-server" / "agentom" / "workspace"
-INPUTS_DIR = WORKSPACE_DIR / "inputs"
-LOGS_DIR = WORKSPACE_DIR / "logs"
-OUTPUTS_DIR = WORKSPACE_DIR / "outputs"
-TEMP_DIR = WORKSPACE_DIR / "tmp"
 
 AGENTOM_BASE_URL = os.getenv("AGENTOM_BASE_URL", "http://localhost:8000")
 APP_NAME = "agentom"
+
+def get_session_workspace(session_id: str) -> Path:
+    """Get the session-specific workspace directory."""
+    # List subfolders in WORKSPACE_DIR that start with f"session-{session_id}"
+    for item in WORKSPACE_DIR.iterdir():
+        if item.is_dir() and item.name.startswith(f"session-{session_id}"):
+            return item
+    # If not found, create a new one with datetime
+    dt = datetime.now()
+    session_folder = f"session-{session_id}-{dt.strftime('%Y%m%d_%H%M%S')}"
+    session_path = WORKSPACE_DIR / session_folder
+    session_path.mkdir(parents=True, exist_ok=True)
+    return session_path
+
+def get_session_dirs(session_id: str):
+    """Get session-specific directories."""
+    session_workspace = get_session_workspace(session_id)
+    return {
+        'workspace': session_workspace,
+        'inputs': session_workspace / "inputs",
+        'logs': session_workspace / "logs",
+        'outputs': session_workspace / "outputs",
+        'temp': session_workspace / "tmp"
+    }

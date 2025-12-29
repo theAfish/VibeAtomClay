@@ -5,22 +5,29 @@ import os
 import asyncio
 import logging
 import time
-from ..config import LOGS_DIR
-from ..services import ensure_workspace_dirs
+from ..config import get_session_dirs
+from ..services import ensure_workspace_dirs, get_last_session_id
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 @router.get("/logs/stream")
 async def stream_logs():
-    ensure_workspace_dirs()
+    session_id = get_last_session_id()
+    if not session_id:
+        async def empty_gen():
+            yield ": No active session\n\n"
+        return StreamingResponse(empty_gen(), media_type="text/event-stream")
+    
+    ensure_workspace_dirs(session_id)
+    logs_dir = get_session_dirs(session_id)['logs']
     
     # Wait for a log file to appear (timeout 10s)
     start_time = time.time()
     latest_file = None
     
     while time.time() - start_time < 10:
-        list_of_files = glob.glob(str(LOGS_DIR / "*.log"))
+        list_of_files = glob.glob(str(logs_dir / "*.log"))
         if list_of_files:
             latest_file = max(list_of_files, key=os.path.getctime)
             break
