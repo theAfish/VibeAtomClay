@@ -27,7 +27,7 @@ async def stream_logs():
     latest_file = None
     
     while time.time() - start_time < 10:
-        list_of_files = glob.glob(str(logs_dir / "*.log"))
+        list_of_files = glob.glob(str(logs_dir / f"*_{session_id}.log"))
         if list_of_files:
             latest_file = max(list_of_files, key=os.path.getctime)
             break

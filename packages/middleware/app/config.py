@@ -18,13 +18,13 @@ APP_NAME = "agentom"
 
 def get_session_workspace(session_id: str) -> Path:
     """Get the session-specific workspace directory."""
-    # List subfolders in WORKSPACE_DIR that start with f"session-{session_id}"
+    # List subfolders in WORKSPACE_DIR that contain session_id
     for item in WORKSPACE_DIR.iterdir():
-        if item.is_dir() and item.name.startswith(f"session-{session_id}"):
+        if item.is_dir() and session_id in item.name:
             return item
     # If not found, create a new one with datetime
     dt = datetime.now()
-    session_folder = f"session-{session_id}-{dt.strftime('%Y%m%d_%H%M%S')}"
+    session_folder = f"{dt.strftime('%Y%m%d_%H%M%S')}-{session_id}"
     session_path = WORKSPACE_DIR / session_folder
     session_path.mkdir(parents=True, exist_ok=True)
     return session_path
@@ -35,7 +35,7 @@ def get_session_dirs(session_id: str):
     return {
         'workspace': session_workspace,
         'inputs': session_workspace / "inputs",
-        'logs': session_workspace / "logs",
+        'logs': WORKSPACE_DIR / "logs",
         'outputs': session_workspace / "outputs",
         'temp': session_workspace / "tmp"
     }
