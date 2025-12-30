@@ -1,6 +1,7 @@
 fastapi
 uvicorn[standard]
 requests
+pytest
 pydantic
 httpx
 pymatgen
