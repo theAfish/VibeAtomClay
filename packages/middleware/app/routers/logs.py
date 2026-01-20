@@ -1,12 +1,14 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 from fastapi.responses import StreamingResponse
 import glob
 import os
 import asyncio
 import logging
 import time
+import json
+from datetime import datetime
 from ..config import get_session_dirs
-from ..services import ensure_workspace_dirs, get_last_session_id
+from ..services import ensure_workspace_dirs, get_last_session_id, set_last_session_id
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -55,3 +57,58 @@ async def stream_logs():
             yield f"data: Error reading log: {str(e)}\n\n"
 
     return StreamingResponse(log_generator(), media_type="text/event-stream")
+
+
+@router.post("/logs/operation")
+async def write_operation_log(payload: dict = Body(...)):
+    """Append a UI operation entry (or entries) to a session log file as JSON Lines.
+
+    Expected payload shapes:
+    - { "entry": {..}, "sessionId": "s_xxx", "userId": "u_xxx" }
+    - { "entries": [{..}, {..}], "sessionId": "s_xxx", "userId": "u_xxx" }
+    If sessionId is missing, falls back to the last known session; if none, uses 'ui'.
+    """
+    try:
+        session_id = payload.get("sessionId") or get_last_session_id() or "ui"
+        user_id = payload.get("userId")
+        if session_id and session_id != "ui":
+            set_last_session_id(session_id)
+
+        ensure_workspace_dirs(session_id)
+        logs_dir = get_session_dirs(session_id)["logs"]
+        os.makedirs(logs_dir, exist_ok=True)
+
+        # File name pattern compatible with /logs/stream lookup
+        # It searches for *_{session_id}.log
+        date_prefix = datetime.utcnow().strftime("%Y%m%d")
+        file_path = os.path.join(logs_dir, f"operations_{date_prefix}_{session_id}.log")
+
+        entries = []
+        if "entry" in payload and isinstance(payload["entry"], dict):
+            entries = [payload["entry"]]
+        elif "entries" in payload and isinstance(payload["entries"], list):
+            entries = payload["entries"]
+
+        # Enrich entries with session/user if missing
+        enriched = []
+        for e in entries:
+            if not isinstance(e, dict):
+                continue
+            ee = dict(e)
+            ee.setdefault("metadata", {})
+            ee["metadata"].setdefault("sessionId", session_id)
+            if user_id:
+                ee["metadata"].setdefault("userId", user_id)
+            enriched.append(ee)
+
+        if not enriched:
+            return {"status": "no-op"}
+
+        with open(file_path, "a", encoding="utf-8") as f:
+            for e in enriched:
+                f.write(json.dumps(e, ensure_ascii=False) + "\n")
+
+        return {"status": "ok", "written": len(enriched), "file": file_path}
+    except Exception as e:
+        logger.exception("Failed to write operation log")
+        raise HTTPException(status_code=500, detail=f"Failed to write log: {e}")
