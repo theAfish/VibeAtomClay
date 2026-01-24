@@ -2,7 +2,6 @@ import os
 import subprocess
 import sys
 import platform
-import shutil
 
 def run_command(command, cwd=None, shell=False, env=None, timeout=None, exit_on_error=True):
     """Runs a command and prints output."""
@@ -120,22 +119,19 @@ def setup_python_env(env_name, requirements_path, root_dir):
     else:
         print(f"Warning: requirements.txt not found at {requirements_path}")
 
-def copy_server_env(root_dir):
-    """Copies the .env file from config to agent-server."""
-    print("\n--- Setting up Server Environment Variables ---")
-    source = os.path.join(root_dir, "config", ".env")
-    dest_dir = os.path.join(root_dir, "packages", "agent-server", "agentom")
-    dest = os.path.join(dest_dir, ".env")
-
-    if os.path.exists(source):
-        if not os.path.exists(dest_dir):
-             print(f"Destination directory {dest_dir} does not exist. Creating it...")
-             os.makedirs(dest_dir, exist_ok=True)
-        
-        print(f"Copying {source} to {dest}...")
-        shutil.copy2(source, dest)
+def summarize_server_env_setup(root_dir):
+    """Explain how the server picks up environment variables without copying .env files."""
+    print("\n--- Server Environment Variables ---")
+    config_env = os.path.join(root_dir, "config", ".env")
+    if os.path.exists(config_env):
+        print(f"Optional fallback: values in {config_env} will be loaded by the server if not already set in the environment.")
     else:
-        print(f"Warning: Source .env file not found at {source}")
+        print(f"No config .env detected at {config_env}. You can add one or rely entirely on exported environment variables.")
+    print("Runtime precedence: existing environment variables stay untouched; .env values are only used when a variable is missing.")
+    if platform.system() == "Windows":
+        print("Set variables before running services, e.g. `set OPENAI_API_KEY=...` or `$Env:OPENAI_API_KEY='...'` in PowerShell.")
+    else:
+        print("Set variables before running services, e.g. `export OPENAI_API_KEY=...`.")
 
 def main():
     root_dir = os.path.dirname(os.path.abspath(__file__))
@@ -154,8 +150,8 @@ def main():
     server_reqs = os.path.join(root_dir, "packages", "agent-server", "requirements.txt")
     setup_python_env("server-env", server_reqs, root_dir)
 
-    # 5. Copy Server .env
-    # copy_server_env(root_dir)
+    # 5. Environment guidance (no file copying required)
+    summarize_server_env_setup(root_dir)
 
     print("\n\nSetup complete! You can now run 'python start_dev.py' to start the services.")
 

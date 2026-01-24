@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 from fastapi import HTTPException
-from .config import CONFIG_FILE, WORKSPACE_DIR, get_session_dirs, ROOT_DIR
+from . import config
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ def get_last_session_id() -> str:
     return _last_session_id
 
 def ensure_workspace_dirs(session_id: str):
-    dirs = get_session_dirs(session_id)
+    dirs = config.get_session_dirs(session_id)
     for dir_path in [dirs['inputs'], dirs['logs'], dirs['outputs'], dirs['files']]:
         dir_path.mkdir(parents=True, exist_ok=True)
 
@@ -42,7 +42,7 @@ def persist_structure_file(structure: dict, session_id: str):
         pass
 
     ensure_workspace_dirs(session_id)
-    dirs = get_session_dirs(session_id)
+    dirs = config.get_session_dirs(session_id)
     file_name = structure.get("fileName") or "structure.poscar"
     safe_name = Path(file_name).name
     target_path = dirs['inputs'] / safe_name
@@ -62,7 +62,7 @@ def get_final_structure_file():
         logger.warning("No session ID available for getting final structure")
         return None
     ensure_workspace_dirs(session_id)
-    dirs = get_session_dirs(session_id)
+    dirs = config.get_session_dirs(session_id)
     structure_extensions = ['*.cif', '*.poscar', '*.extxyz', '*.vasp', '*.xyz', '*.POSCAR', '*.pdb']
     candidates = []
     for ext in structure_extensions:
@@ -82,7 +82,7 @@ def save_imported_file(content: str, filename: str, session_id: str, file_format
     Returns the saved file path as a dict with 'extxyz' key.
     """
     ensure_workspace_dirs(session_id)
-    dirs = get_session_dirs(session_id)
+    dirs = config.get_session_dirs(session_id)
     files_dir = dirs['files']
     
     # Sanitize filename
@@ -167,7 +167,7 @@ def _detect_structure_format(filename: str, content: str) -> str:
 def get_exported_file(session_id: str, filename: str):
     """Retrieve an exported file from the session's files directory."""
     ensure_workspace_dirs(session_id)
-    dirs = get_session_dirs(session_id)
+    dirs = config.get_session_dirs(session_id)
     file_path = dirs['files'] / filename
     
     if not file_path.exists():

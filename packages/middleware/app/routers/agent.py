@@ -6,7 +6,7 @@ import uuid
 import logging
 from ..models import CreateSessionRequest, CreateSessionResponse, SendMessageRequest, SendMessageResponse
 from ..services import persist_structure_file, set_last_session_id
-from ..config import AGENTOM_BASE_URL, APP_NAME
+from .. import config
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -31,7 +31,8 @@ async def run_agent(request: dict):
         persist_structure_file(structure_payload, session_id)
 
     # First, create the session if not exists
-    session_url = f"{AGENTOM_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions/{session_id}"
+    agentom_base = config.get_agentom_base_url()
+    session_url = f"{agentom_base}/apps/{config.get_app_name()}/users/{user_id}/sessions/{session_id}"
     try:
         async with httpx.AsyncClient() as client:
             await client.post(session_url, json={}, headers={"Content-Type": "application/json"})
@@ -40,7 +41,7 @@ async def run_agent(request: dict):
         pass  # Continue anyway
 
     # Now forward the /run request to agentom
-    url = f"{AGENTOM_BASE_URL}/run"
+    url = f"{agentom_base}/run"
     
     async def stream_generator():
         async with httpx.AsyncClient() as client:
@@ -74,7 +75,8 @@ async def create_session(request: CreateSessionRequest):
     session_id = f"s_{uuid.uuid4().hex[:6]}"
 
     # Call agentom to create session
-    url = f"{AGENTOM_BASE_URL}/apps/{APP_NAME}/users/{user_id}/sessions/{session_id}"
+    agentom_base = config.get_agentom_base_url()
+    url = f"{agentom_base}/apps/{config.get_app_name()}/users/{user_id}/sessions/{session_id}"
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json={}, headers={"Content-Type": "application/json"})
@@ -86,7 +88,8 @@ async def create_session(request: CreateSessionRequest):
 
 @router.post("/send_message", response_model=SendMessageResponse)
 async def send_message(request: SendMessageRequest):
-    url = f"{AGENTOM_BASE_URL}/apps/{APP_NAME}/users/{request.user_id}/sessions/{request.session_id}"
+    agentom_base = config.get_agentom_base_url()
+    url = f"{agentom_base}/apps/{config.get_app_name()}/users/{request.user_id}/sessions/{request.session_id}"
     try:
         # Assuming sending message is POST to the same URL with message
         data = {"message": request.message}
