@@ -155,7 +155,7 @@ def main():
     setup_python_env("server-env", server_reqs, root_dir)
 
     # 5. Copy Server .env
-    copy_server_env(root_dir)
+    # copy_server_env(root_dir)
 
     print("\n\nSetup complete! You can now run 'python start_dev.py' to start the services.")
 

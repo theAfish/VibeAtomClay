@@ -65,9 +65,11 @@ def get_session_dirs(session_id: str):
     """Get session-specific directories, ensuring base exists."""
     session_workspace = get_session_workspace(session_id)
     logs_dir = WORKSPACE_DIR / "logs"
-    # Ensure the logs directory exists regardless of session state
+    files_dir = WORKSPACE_DIR / "files" / session_id
+    # Ensure the logs and files directories exist regardless of session state
     try:
         logs_dir.mkdir(parents=True, exist_ok=True)
+        files_dir.mkdir(parents=True, exist_ok=True)
     except Exception:
         pass
     return {
@@ -75,5 +77,6 @@ def get_session_dirs(session_id: str):
         'inputs': session_workspace / "inputs",
         'logs': logs_dir,
         'outputs': session_workspace / "outputs",
-        'temp': session_workspace / "tmp"
+        'temp': session_workspace / "tmp",
+        'files': files_dir
     }
